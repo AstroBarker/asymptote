@@ -42,7 +42,7 @@ E_asym = mymodel.E_asym
 ```
 
 or simply as a script
-```python
+```shell
 python asymptote.py --nwalkers 32 --nsamples 16384 --nburn 512 --frac 0.5
 ```
 
