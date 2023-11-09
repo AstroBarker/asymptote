@@ -1,8 +1,8 @@
-#      ___           _______.____    ____ .___  ___. .______   .___________.  ______   .___________. _______ 
+#      ___           _______.____    ____ .___  ___. .______   .___________.  ______   .___________. _______
 #     /   \         /       |\   \  /   / |   \/   | |   _  \  |           | /  __  \  |           ||   ____|
-#    /  ^  \       |   (----` \   \/   /  |  \  /  | |  |_)  | `---|  |----`|  |  |  | `---|  |----`|  |__   
-#   /  /_\  \       \   \      \_    _/   |  |\/|  | |   ___/      |  |     |  |  |  |     |  |     |   __|  
-#  /  _____  \  .----)   |       |  |     |  |  |  | |  |          |  |     |  `--'  |     |  |     |  |____ 
+#    /  ^  \       |   (----` \   \/   /  |  \  /  | |  |_)  | `---|  |----`|  |  |  | `---|  |----`|  |__
+#   /  /_\  \       \   \      \_    _/   |  |\/|  | |   ___/      |  |     |  |  |  |     |  |     |   __|
+#  /  _____  \  .----)   |       |  |     |  |  |  | |  |          |  |     |  `--'  |     |  |     |  |____
 # /__/     \__\ |_______/        |__|     |__|  |__| | _|          |__|      \______/      |__|     |_______|
 
 
@@ -31,8 +31,8 @@ class Model:
     fn (str): Filename
     t (np.array): Time array.
     expl_energy (np.array): Explosion energy array.
-    fit_frac (float): fraction of explosion energy to fit (0.0, 1.0). 
-      Fit the final fit_frac of data. Default: 0.5
+    fit_frac (float): fraction of explosion energy to fit (0.0, 1.0).
+    Fit the final fit_frac of data. Default: 0.5
     flat_samples (np.array): MCMC output.
     E_asym (float): Asymptotic explosion energy.
     A (float): Fit parameter A.
@@ -149,7 +149,7 @@ class Model:
 
     # ! only fit part of data !
     f = 1.0 - self.fit_frac
-    ind = np.max(np.where(self.t <= f * self.t[-1] ))
+    ind = np.max(np.where(self.t <= f * self.t[-1]))
     t = self.t[ind:]
     expl_energy = self.expl_energy[ind:]
 
@@ -215,7 +215,11 @@ class Model:
       time, energy - error, energy + error, color="cornflowerblue", alpha=0.25
     )
 
-    ax.set(ylim=[50, self.E_asym * 1.005], xlabel="Time [s]", ylabel=r"log$_{10}$(E$_{\mathrm{expl}}$)")
+    ax.set(
+      ylim=[50, self.E_asym * 1.005],
+      xlabel="Time [s]",
+      ylabel=r"log$_{10}$(E$_{\mathrm{expl}}$)",
+    )
     plt.savefig("energy.png")
 
   # End Plot_Energy
@@ -244,12 +248,14 @@ if __name__ == "__main__":
   frac = args.frac
 
   # Check. Frac must be in (0.0, 1.0)
-  if (frac <= 0.0 or frac >= 1.0):
+  if frac <= 0.0 or frac >= 1.0:
     raise ValueError("frac must be in open interval (0.0, 1.0)")
 
-  #print(help(Model))
+  # print(help(Model))
 
   model = Model(fn, frac)
   model.Fit_Energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
   model.Plot_Corner()
   model.Plot_Energy()
+
+# End main
