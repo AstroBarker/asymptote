@@ -8,7 +8,7 @@ Code formatted with [black-indent](https://github.com/AstroBarker/black-indent),
 ## Functional Form
 We fit a function of the following form
 
-$E_{\mathrm{expl}} = E_{\infty} - A / t$
+$$E_{\mathrm{expl}} = E_{\infty} - A / t$$
 
 where $E_{\infty}$ is the asymptotic explosion energy and $A$ is a fit parameter encapsulating physics such as opacitiy and heating rate.
 We fit this equation to simulation output using Markov Chain Monte Carlo (MCMC) Bayesian inference methods.
