@@ -36,7 +36,7 @@ Default value is 0.5, to only fit the second half of data, but this may need twe
 With `asymptote.py` contents in your working directory, or in your `$PYTHONPATH`, you may simply
 ```python
 import asymptote
-mymodel = profiles.Model(path_to_data, fit_frac)
+mymodel = asymptote.Model(path_to_data, fit_frac)
 mymodel.Fit_Energy(nwalkers=32, nsamples=16384, nburn=512)
 E_asym = mymodel.E_asym
 ```
