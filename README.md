@@ -20,7 +20,7 @@ In practice, it is very small (unless the fit is very bad).
 
 Our likelihoods are given by
 
-$$\mathcal{L}({E_{\mathrm{sim},i}} | E_{\infty}, A, \sigma)P(E_{\infty})P(A)P(\sigma) = \prod_{i} \frac{1}{\sqrt{2\pi\sigma}} e^{-[E_{\mathrm{sim},i} - E_{\mathrm{expl}}(E_{\infty}, a, \sigma)]^2/[2\sigma^2]}$$
+$$\mathcal{L}({E_{\mathrm{sim},i}} | E_{\infty}, A, \sigma)P(E_{\infty})P(A)P(\sigma) = \prod_{i} \frac{1}{\sqrt{2\pi\sigma}} e^{-[E_{\mathrm{sim},i} - E_{\mathrm{expl}}(E_{\infty}, a, t)]^2/[2\sigma^2]}$$
 
 In practice, you should fit the latter half or third of your data (post shock revival). 
 This is controlled with the `--frac` command line arg or `self.frac` member attribute. 
