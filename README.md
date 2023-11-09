@@ -33,6 +33,9 @@ Default value is 0.5, to only fit the second half of data, but this may need twe
 - corner
 
 ## Usage
+This code assumes that it is loading FLASH `.dat` output. 
+To use with your data, modify `load_expl_energy_()` as needed to load time and energy data.
+
 With `asymptote.py` contents in your working directory, or in your `$PYTHONPATH`, you may simply
 ```python
 import asymptote
