@@ -25,7 +25,7 @@ Our likelihoods are given by
 $$\mathcal{L}({E_{\mathrm{sim},i}} | E_{\infty}, A, \sigma)P(E_{\infty})P(A)P(\sigma) = \prod_{i} \frac{1}{\sqrt{2\pi\sigma}} e^{-[E_{\mathrm{sim},i} - E_{\mathrm{expl}}(E_{\infty}, a, t)]^2/[2\sigma^2]}$$
 
 In practice, you should fit the latter half or third of your data (post shock revival). 
-This is controlled with the `--frac` command line arg or `self.frac` member attribute. 
+This is controlled with the `--frac` command line arg or `self.fit_frac` member attribute. 
 Default value is 0.5, to only fit the second half of data, but this may need tweaking on a case-by-case basis.
 
 ## Dependencies
