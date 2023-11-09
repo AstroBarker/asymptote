@@ -22,11 +22,28 @@ Our likelihoods are given by
 
 $$\mathcal{L}({E_{\mathrm{sim},i}} | E_{\infty}, A, \sigma)P(E_{\infty})P(A)P(\sigma) = \prod_{i} \frac{1}{\sqrt{2\pi\sigma}} e^{-[E_{\mathrm{sim},i} - E_{\mathrm{expl}}(E_{\infty}, a, \sigma)]/[2\sigma^2]}$$
 
+In practice, you should fit the latter half or third of your data (post shock revival). 
+This is controlled with the `--frac` command line arg or `self.frac` member attribute. 
+Default value is 0.5, to only fit the second half of data, but this may need tweaking on a case-by-case basis.
+
+## Dependencies
+- numpy
+- matplotlib
+- emcee
+- corner
+
 ## Usage
-With the `src/` contents in your working directory, or in your `$PYTHONPATH`, you may simply
+With `asymptote.py` contents in your working directory, or in your `$PYTHONPATH`, you may simply
 ```python
 import asymptote
 mymodel = profiles.Model(path_to_data, fit_frac)
+mymodel.Fit_Energy(nwalkers=32, nsamples=16384, nburn=512)
+E_asym = mymodel.E_asym
+```
+
+or simply as a script
+```python
+python asymptote.py --nwalkers 32 --nsamples 16384 --nburn 512 --frac 0.5
 ```
 
 See `help(asymptote.Model)`, or the source code docstrings, for documentation.
