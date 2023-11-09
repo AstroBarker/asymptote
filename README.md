@@ -1,4 +1,6 @@
 # ASYMPTOTic explosion Energy
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 Code to estimate asymtptotic core-collapse supernova explosion energy following the methods of  [Murphy et al. 2019](https://ui.adsabs.harvard.edu/abs/2019MNRAS.489..641M/abstract).
 Fit a physically motivated functional form for the time dependence of the explosion energy using [emcee](https://emcee.readthedocs.io/en/stable/index.html).
 Code formatted with [black-indent](https://github.com/AstroBarker/black-indent), aka my wrapper around [black](https://github.com/psf/black) that isn't a pain about two space indenting.
