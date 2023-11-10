@@ -1,3 +1,9 @@
+"""
+ Purpose: Estimate asymptotic explosion energies.
+ Author: Brandon Barker
+ Inspiration: Murphy et al 2019 (ADS 2019MNRAS.489..641M)
+"""
+
 #      ___           _______.____    ____ .___  ___. .______   .___________.  ______   .___________. _______
 #     /   \         /       |\   \  /   / |   \/   | |   _  \  |           | /  __  \  |           ||   ____|
 #    /  ^  \       |   (----` \   \/   /  |  \  /  | |  |_)  | `---|  |----`|  |  |  | `---|  |----`|  |__
@@ -12,11 +18,6 @@ import matplotlib.pyplot as plt
 import emcee
 import corner
 
-"""
-  Purpose: Estimate asymptotic explosion energies.
-  Author: Brandon Barker
-  Inspiration: Murphy et al 2019 (ADS 2019MNRAS.489..641M)
-"""
 
 
 class Model:
@@ -61,7 +62,6 @@ class Model:
   """
 
   def __init__(self, fn, frac=0.5):
-    self.fn = fn
     self.fit_frac = frac
 
     self.t = None
@@ -72,16 +72,16 @@ class Model:
     self.E_error = np.array([0.0, 0.0])
     self.A_error = np.array([0.0, 0.0])
 
-    self.load_expl_energy_()
+    self.load_expl_energy_(fn)
 
   # End __init__
 
-  def load_expl_energy_(self):
+  def load_expl_energy_(self, fn):
     """
     load explosion energy from FLASH .dat output
     """
 
-    self.t, self.expl_energy = np.loadtxt(self.fn, usecols=(0, 9), unpack=True)
+    self.t, self.expl_energy = np.loadtxt(fn, usecols=(0, 9), unpack=True)
 
   # End load_expl_energy_
 
@@ -110,6 +110,9 @@ class Model:
   # End model_e_expl_error_
 
   def propagate_error(self):
+    """
+    Apply Monte Carlo error propagation for log(E) -> E
+    """
     if (self.E_error[0] == 0.0):
       raise ValueError("Energy uncertainty is 0.0. Have you ran the MCMC?")
 
@@ -129,14 +132,14 @@ class Model:
 
   # End propagate_error
 
-  def log_likelihood_(self, theta, t, explosion_energy):
+  def log_likelihood_(self, theta, t, y):
     """
     Log likelihood function for fitting explosion energy at infinity
     """
 
     E_inf, A, sigma = theta
-    model = self.model_e_expl_(E_inf, A, t)
-    resid = explosion_energy - model
+    y_model = self.model_e_expl_(E_inf, A, t)
+    resid = y - y_model
 
     return -0.5 * np.sum((resid**2) / sigma + np.log(sigma))
 
@@ -172,8 +175,7 @@ class Model:
     ndim = 3
 
     # ! only fit part of data !
-    f = 1.0 - self.fit_frac
-    ind = np.max(np.where(self.t <= f * self.t[-1]))
+    ind = np.max(np.where(self.t <= (1.0 - self.fit_frac) * self.t[-1]))
     t = self.t[ind:]
     expl_energy = self.expl_energy[ind:]
 
@@ -275,16 +277,16 @@ if __name__ == "__main__":
   )
 
   args = parser.parse_args()
-  fn = args.filename
-  frac = args.frac
+  filename = args.filename
+  fraction = args.frac
 
   # Check. Frac must be in (0.0, 1.0)
-  if frac <= 0.0 or frac >= 1.0:
+  if fraction <= 0.0 or fraction >= 1.0:
     raise ValueError("frac must be in open interval (0.0, 1.0)")
 
   # print(help(Model))
 
-  model = Model(fn, frac)
+  model = Model(filename, fraction)
   model.fit_energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
   model.plot_corner()
   model.plot_energy()
@@ -295,10 +297,10 @@ if __name__ == "__main__":
   print("=========================================================\n")
 
   # propagate error log(E) -> E
-  mean, plus, minus = model.propagate_error()
+  mean_e, plus, minus = model.propagate_error()
 
   print("=========================================================")
-  print(f"Asymptotic explosion energy: E = {mean:.4e} erg")
+  print(f"Asymptotic explosion energy: E = {mean_e:.4e} erg")
   print(f"Uncertainties: +{plus:.4e} erg, -{minus:.4e} erg")
   print("=========================================================")
 # End main
