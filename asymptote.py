@@ -19,7 +19,6 @@ import emcee
 import corner
 
 
-
 class Model:
   """
   Class for holding explosion energy and fitting routines.
@@ -113,7 +112,7 @@ class Model:
     """
     Apply Monte Carlo error propagation for log(E) -> E
     """
-    if (self.E_error[0] == 0.0):
+    if self.E_error[0] == 0.0:
       raise ValueError("Energy uncertainty is 0.0. Have you ran the MCMC?")
 
     # log(E) should be Normally distributed with symmetric uncertainties.
@@ -122,7 +121,7 @@ class Model:
 
     n_mc_samples = 10000
     energies = np.random.normal(self.E_asym, e_error, n_mc_samples)
-    vals = np.power(10.0, energies) # log(E) -> E
+    vals = np.power(10.0, energies)  # log(E) -> E
     error = np.percentile(vals, [16, 50, 84])
     mean = error[1]
     error_below = mean - error[0]
