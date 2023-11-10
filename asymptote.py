@@ -41,15 +41,19 @@ class Model:
 
   Methods:
     load_expl_energy_: load t, expl_energy from .dat file.
-    Model_E_expl_: fit function for MCMC.
+    model_e_expl_: fit function for MCMC.
+    model_e_expl_error_: analytic error for fit function.
     log_likelihood_: Log likelihood for MCMC.
     log_prior_: Uniform priors.
     log_propability_: Combied prior and likelihood.
-    Fit_Energy: Run MCMC sampler
+    fit_energy: Run MCMC sampler
+    plot_corner: produce a MCMC corner plot.
+    plot_energy: plot explosion energy with extrapolation.
+    propagate_error: Monte Carlo error porpagation for log(E) -> E
 
   Usage:
     >>> model = Model(path_to_dot_dat, fit_frac)
-    >>> model.Fit_Energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
+    >>> model.fit_energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
     >>> E_asym = model.E_asym
 
     or as a script:
@@ -81,7 +85,7 @@ class Model:
 
   # End load_expl_energy_
 
-  def Model_E_expl_(self, E_inf, A, t):
+  def model_e_expl_(self, E_inf, A, t):
     """
     Simple function form for the explosion energy assuming
     a neutrino driven mechanism. See Murphy et al 2019 (https://arxiv.org/pdf/1904.09444.pdf)
@@ -93,9 +97,9 @@ class Model:
 
     return E_inf - A / t
 
-  # End Model_E_expl_
+  # End model_e_expl_
 
-  def Model_E_expl_error_(self, sigma_E, sigma_A, t):
+  def model_e_expl_error_(self, sigma_E, sigma_A, t):
     """
     propagate error in to explosion energy curve, for plotting.
     Asymptotes to the error on the asymptotic explosion energy.
@@ -103,7 +107,27 @@ class Model:
 
     return sigma_E * sigma_E + sigma_A * sigma_A / (t * t)
 
-  # End Model_E_expl_error_
+  # End model_e_expl_error_
+
+  def propagate_error(self):
+    if (self.E_error[0] == 0.0):
+      raise ValueError("Energy uncertainty is 0.0. Have you ran the MCMC?")
+
+    # log(E) should be Normally distributed with symmetric uncertainties.
+    # average them and treat them as a Normal variance.
+    e_error = np.mean(self.E_error)
+
+    n_mc_samples = 10000
+    energies = np.random.normal(self.E_asym, e_error, n_mc_samples)
+    vals = np.power(10.0, energies) # log(E) -> E
+    error = np.percentile(vals, [16, 50, 84])
+    mean = error[1]
+    error_below = mean - error[0]
+    error_above = error[2] - mean
+
+    return mean, error_above, error_below
+
+  # End propagate_error
 
   def log_likelihood_(self, theta, t, explosion_energy):
     """
@@ -111,7 +135,7 @@ class Model:
     """
 
     E_inf, A, sigma = theta
-    model = self.Model_E_expl_(E_inf, A, t)
+    model = self.model_e_expl_(E_inf, A, t)
     resid = explosion_energy - model
 
     return -0.5 * np.sum((resid**2) / sigma + np.log(sigma))
@@ -141,7 +165,7 @@ class Model:
 
   # End log_probability_
 
-  def Fit_Energy(self, nwalkers=2**4, nsamples=2**14, nburn=2**12):
+  def fit_energy(self, nwalkers=2**4, nsamples=2**14, nburn=2**12):
     """
     MCMC fitting of asymptotic explosion energy
     """
@@ -157,10 +181,15 @@ class Model:
     y = np.log10(expl_energy)
 
     pos = np.zeros((nwalkers, ndim))
-    # Random guess for initial position around FLASH final explosion energy
-    pos[:, 0] = y[-1] + 0.1 + np.random.randn(nwalkers)
-    pos[:, 1] = np.random.uniform(0.0, np.e, nwalkers)
-    pos[:, 2] = np.random.uniform(0.0, np.e, nwalkers)
+    # Random guess for initial position around final explosion energy
+    mu = y[-1]
+    sigma = np.e
+    pos[:, 0] = np.random.normal(mu, sigma, nwalkers)
+
+    # sample A, sigma uniform in open interval (0.0, e)
+    eps = np.finfo(float).eps
+    pos[:, 1] = np.random.uniform(eps, np.e, nwalkers)
+    pos[:, 2] = np.random.uniform(eps, np.e, nwalkers)
 
     sampler = emcee.EnsembleSampler(
       nwalkers, ndim, self.log_probability_, args=(x, y)
@@ -175,9 +204,9 @@ class Model:
     self.A_error[0] = np.percentile(self.flat_samples[:, 1], 84) - self.A
     self.A_error[1] = self.A - np.percentile(self.flat_samples[:, 1], 16)
 
-  # End Fit_Energy
+  # End fit_energy
 
-  def Plot_Corner(self):
+  def plot_corner(self):
     """
     Produce corner plot of MCMC posteriors
     """
@@ -192,9 +221,9 @@ class Model:
     )
     plt.savefig("cornerplot.png")
 
-  # End Plot_Corner
+  # End plot_corner
 
-  def Plot_Energy(self):
+  def plot_energy(self):
     """
     Plot explosion energy vs time with extrapolation
     """
@@ -202,14 +231,16 @@ class Model:
 
     f = 1.0 - self.fit_frac
     time = np.linspace(f * self.t[-1], t_end, 5000)
-    energy = self.Model_E_expl_(self.E_asym, self.A, time)
+    energy = self.model_e_expl_(self.E_asym, self.A, time)
 
     fig, ax = plt.subplots()
 
-    ax.plot(self.t, np.log10(self.expl_energy), color="cornflowerblue")
+    # add machine eps to expl_energy to avoid log10(0)
+    eps = np.finfo(float).eps
+    ax.plot(self.t, np.log10(self.expl_energy + eps), color="cornflowerblue")
 
     error = np.sqrt(
-      self.Model_E_expl_error_(np.mean(self.E_error), np.mean(self.A_error), time)
+      self.model_e_expl_error_(np.mean(self.E_error), np.mean(self.A_error), time)
     )
     ax.fill_between(
       time, energy - error, energy + error, color="cornflowerblue", alpha=0.25
@@ -222,7 +253,7 @@ class Model:
     )
     plt.savefig("energy.png")
 
-  # End Plot_Energy
+  # End plot_energy
 
 
 if __name__ == "__main__":
@@ -254,8 +285,20 @@ if __name__ == "__main__":
   # print(help(Model))
 
   model = Model(fn, frac)
-  model.Fit_Energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
-  model.Plot_Corner()
-  model.Plot_Energy()
+  model.fit_energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
+  model.plot_corner()
+  model.plot_energy()
 
+  print("=========================================================")
+  print(f"Asymptotic explosion energy: log(E) = {model.E_asym:.4f}")
+  print(f"Uncertainties: +{model.E_error[0]:.4e}, -{model.E_error[1]:.4e}")
+  print("=========================================================\n")
+
+  # propagate error log(E) -> E
+  mean, plus, minus = model.propagate_error()
+
+  print("=========================================================")
+  print(f"Asymptotic explosion energy: E = {mean:.4e} erg")
+  print(f"Uncertainties: +{plus:.4e} erg, -{minus:.4e} erg")
+  print("=========================================================")
 # End main

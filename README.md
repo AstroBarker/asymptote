@@ -28,6 +28,10 @@ In practice, you should fit the latter half or third of your data (post shock re
 This is controlled with the `--frac` command line arg or `self.fit_frac` member attribute. 
 Default value is 0.5, to only fit the second half of data, but this may need tweaking on a case-by-case basis.
 
+This produces mean and uncertainties on $log_{10}(E)$. 
+To propagate this to uncertainty on $E$, a convenience function `propagate_error` is available.
+It uses Monte Carlo error propagation to capture the potentially asymmetric uncertainties on $E$.
+
 ## Dependencies
 - numpy
 - matplotlib
@@ -42,7 +46,7 @@ With `asymptote.py` contents in your working directory, or in your `$PYTHONPATH`
 ```python
 import asymptote
 mymodel = asymptote.Model(path_to_data, fit_frac)
-mymodel.Fit_Energy(nwalkers=32, nsamples=16384, nburn=512)
+mymodel.fit_energy(nwalkers=32, nsamples=16384, nburn=512)
 E_asym = mymodel.E_asym
 ```
 
@@ -52,3 +56,6 @@ python asymptote.py --nwalkers 32 --nsamples 16384 --nburn 512 --frac 0.5
 ```
 
 See `help(asymptote.Model)`, or the source code docstrings, for documentation.
+
+## TODO:
+- Might be more portable to initialize class with time, energy data instead of having a built in load func. Oh well.
