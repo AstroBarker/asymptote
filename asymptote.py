@@ -259,7 +259,7 @@ class Model:
 
 if __name__ == "__main__":
   # Instantiate the parser
-  parser = argparse.ArgumentParser(description="Optional app description")
+  parser = argparse.ArgumentParser(description="Asymptotic explosion energy estimator")
 
   # Required positional argument
   parser.add_argument("filename", type=str, help="Filename of .dat file")
