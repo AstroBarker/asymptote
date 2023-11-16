@@ -25,7 +25,7 @@ class Model:
   Purpose: fit asymptotic explosion energy. See Murphy et al 2019 (ADS 2019MNRAS.489..641M)
 
   Args:
-    fn (str): paht to FLASH .dat file
+    fn (str): path to explosion energy data file
 
   Attributes:
     fn (str): Filename
