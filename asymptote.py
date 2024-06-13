@@ -1,7 +1,7 @@
 """
- Purpose: Estimate asymptotic explosion energies.
- Author: Brandon Barker
- Inspiration: Murphy et al 2019 (ADS 2019MNRAS.489..641M)
+Purpose: Estimate asymptotic explosion energies.
+Author: Brandon Barker
+Inspiration: Murphy et al 2019 (ADS 2019MNRAS.489..641M)
 """
 
 #      ___           _______.____    ____ .___  ___. .______   .___________.  ______   .___________. _______
@@ -10,7 +10,6 @@
 #   /  /_\  \       \   \      \_    _/   |  |\/|  | |   ___/      |  |     |  |  |  |     |  |     |   __|
 #  /  _____  \  .----)   |       |  |     |  |  |  | |  |          |  |     |  `--'  |     |  |     |  |____
 # /__/     \__\ |_______/        |__|     |__|  |__| | _|          |__|      \______/      |__|     |_______|
-
 
 import argparse
 import numpy as np
@@ -53,7 +52,9 @@ class Model:
 
   Usage:
     >>> model = Model(path_to_dot_dat, fit_frac)
-    >>> model.fit_energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
+    >>> model.fit_energy(
+    ...   nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn
+    ... )
     >>> E_asym = model.E_asym
 
     or as a script:
@@ -241,7 +242,9 @@ class Model:
     ax.plot(self.t, np.log10(self.expl_energy + eps), color="cornflowerblue")
 
     error = np.sqrt(
-      self.model_e_expl_error_(np.mean(self.E_error), np.mean(self.A_error), time)
+      self.model_e_expl_error_(
+        np.mean(self.E_error), np.mean(self.A_error), time
+      )
     )
     ax.fill_between(
       time, energy - error, energy + error, color="cornflowerblue", alpha=0.25
@@ -257,9 +260,11 @@ class Model:
   # End plot_energy
 
 
-if __name__ == "__main__":
+def main():
   # Instantiate the parser
-  parser = argparse.ArgumentParser(description="Asymptotic explosion energy estimator")
+  parser = argparse.ArgumentParser(
+    prog="asymptote", description="Asymptotic explosion energy estimator"
+  )
 
   # Required positional argument
   parser.add_argument("filename", type=str, help="Filename of .dat file")
@@ -286,7 +291,9 @@ if __name__ == "__main__":
   # print(help(Model))
 
   model = Model(filename, fraction)
-  model.fit_energy(nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn)
+  model.fit_energy(
+    nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn
+  )
   model.plot_corner()
   model.plot_energy()
 
@@ -302,4 +309,9 @@ if __name__ == "__main__":
   print(f"Asymptotic explosion energy: E = {mean_e:.4e} erg")
   print(f"Uncertainties: +{plus:.4e} erg, -{minus:.4e} erg")
   print("=========================================================")
+
+
 # End main
+
+if __name__ == "__main__":
+  main()
