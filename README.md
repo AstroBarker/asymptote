@@ -3,7 +3,6 @@
 
 Code to estimate asymtptotic core-collapse supernova explosion energy following the methods of  [Murphy et al. 2019](https://ui.adsabs.harvard.edu/abs/2019MNRAS.489..641M/abstract).
 Fit a physically motivated functional form for the time dependence of the explosion energy using [emcee](https://emcee.readthedocs.io/en/stable/index.html).
-Code formatted with [black-indent](https://github.com/AstroBarker/black-indent), aka my wrapper around [black](https://github.com/psf/black) that isn't a pain about two space indenting.
 
 ## Functional Form
 We fit a function of the following form
@@ -37,10 +36,11 @@ It uses Monte Carlo error propagation to capture the potentially asymmetric unce
 - matplotlib
 - emcee
 - corner
+- optional: tqdm (for progress bar)
 
 ## Usage
 This code assumes that it is loading FLASH `.dat` output. 
-To use with your data, modify `load_expl_energy_()` as needed to load time and energy data.
+To use with your data, add a function as needed to load time and energy data.
 
 With `asymptote.py` contents in your working directory, or in your `$PYTHONPATH`, you may simply
 ```python
@@ -57,5 +57,9 @@ python asymptote.py --nwalkers 32 --nsamples 16384 --nburn 512 --frac 0.5
 
 See `help(asymptote.Model)`, or the source code docstrings, for documentation.
 
-## TODO:
-- Might be more portable to initialize class with time, energy data instead of having a built in load func. Oh well.
+# Code Style
+Code linting and formatting is done with [ruff](https://docs.astral.sh/ruff/).
+Rules are listed in [ruff.toml](ruff.toml).
+To check all python in the current directory, you may `ruff .`.
+To format a given file according to `ruff.toml`, run `ruff format file.py`.
+Checks for formatting are performed on each push / PR.

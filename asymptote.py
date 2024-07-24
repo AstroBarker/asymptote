@@ -16,6 +16,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import emcee
 import corner
+import warnings
+
+
+def load_expl_energy_flash(fn):
+  """
+  load explosion energy from FLASH .dat output
+  """
+
+  t, energy = np.loadtxt(fn, usecols=(0, 9), unpack=True)
+  return t, energy
+
+
+# End load_expl_energy_flash
 
 
 class Model:
@@ -24,12 +37,10 @@ class Model:
   Purpose: fit asymptotic explosion energy. See Murphy et al 2019 (ADS 2019MNRAS.489..641M)
 
   Args:
-    fn (str): path to explosion energy data file
-
-  Attributes:
-    fn (str): Filename
     t (np.array): Time array.
     expl_energy (np.array): Explosion energy array.
+
+  Attributes:
     fit_frac (float): fraction of explosion energy to fit (0.0, 1.0).
     Fit the final fit_frac of data. Default: 0.5
     flat_samples (np.array): MCMC output.
@@ -39,7 +50,6 @@ class Model:
     A_error (np.array): Uncertainties on fit parameter A.
 
   Methods:
-    load_expl_energy_: load t, expl_energy from .dat file.
     model_e_expl_: fit function for MCMC.
     model_e_expl_error_: analytic error for fit function.
     log_likelihood_: Log likelihood for MCMC.
@@ -51,39 +61,48 @@ class Model:
     propagate_error: Monte Carlo error porpagation for log(E) -> E
 
   Usage:
-    >>> model = Model(path_to_dot_dat, fit_frac)
+    >>> model = Model(time, energy, fit_frac)
     >>> model.fit_energy(
     ...   nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn
     ... )
     >>> E_asym = model.E_asym
 
     or as a script:
-    >>> python fit_energy.py path_to_dot_dat --nwalkers 16 --nsamples 2048 --nburn 128 --frac 0.25
+    >>> python fit_energy.py path_to_data_file --nwalkers 16 --nsamples 2048 --nburn 128 --frac 0.25
   """
 
-  def __init__(self, fn, frac=0.5):
-    self.fit_frac = frac
+  def __init__(self, time, expl_energy, frac=0.5):
+    # --- Do some input checking ---
 
-    self.t = None
-    self.expl_energy = None
-    self.flat_samples = None
-    self.E_asym = 0.0
+    # Check. Frac must be in (0.0, 1.0)
+    if frac <= 0.0 or frac >= 1.0:
+      raise ValueError("frac must be in open interval (0.0, 1.0)")
+
+    # check on input data dims
+    if len(time) != len(expl_energy):
+      raise ValueError(
+        "Explosion energy and time arrays have different lengths"
+      )
+
+    # Hack check: ensure energy is in ergs
+    large_energy = 100.0e51
+    large_log_energy = np.log10(large_energy)  # log(100 foe)
+    if np.max(expl_energy) < large_log_energy:
+      raise ValueError(
+        "Explosion energies are weird: are they in the correct units? (ergs)"
+      )
+
+    self.fit_frac = frac
+    self.t = time
+    self.expl_energy = expl_energy
+
+    self.flat_samples = None  # MCMC data, hold onto for making posterior plots.
+    self.E_asym = 0.0  # target quantity
     self.A = 0.0
     self.E_error = np.array([0.0, 0.0])
     self.A_error = np.array([0.0, 0.0])
 
-    self.load_expl_energy_(fn)
-
   # End __init__
-
-  def load_expl_energy_(self, fn):
-    """
-    load explosion energy from FLASH .dat output
-    """
-
-    self.t, self.expl_energy = np.loadtxt(fn, usecols=(0, 9), unpack=True)
-
-  # End load_expl_energy_
 
   def model_e_expl_(self, E_inf, A, t):
     """
@@ -180,7 +199,7 @@ class Model:
     expl_energy = self.expl_energy[ind:]
 
     x = t
-    y = np.log10(expl_energy)
+    y = np.log10(expl_energy)  # work in log space
 
     pos = np.zeros((nwalkers, ndim))
     # Random guess for initial position around final explosion energy
@@ -239,7 +258,7 @@ class Model:
 
     # add machine eps to expl_energy to avoid log10(0)
     eps = np.finfo(float).eps
-    ax.plot(self.t, np.log10(self.expl_energy + eps), color="cornflowerblue")
+    ax.plot(self.t, np.log10(self.expl_energy + eps), color="rebeccapurple")
 
     error = np.sqrt(
       self.model_e_expl_error_(
@@ -247,7 +266,7 @@ class Model:
       )
     )
     ax.fill_between(
-      time, energy - error, energy + error, color="cornflowerblue", alpha=0.25
+      time, energy - error, energy + error, color="rebeccapurple", alpha=0.25
     )
 
     ax.set(
@@ -267,30 +286,53 @@ def main():
   )
 
   # Required positional argument
-  parser.add_argument("filename", type=str, help="Filename of .dat file")
+  parser.add_argument("filename", type=str, help="Filename of data file")
   # Optional argument
   parser.add_argument(
-    "--nwalkers", type=int, default=2**4, help="Number of MCMC walkers"
+    "--nwalkers",
+    type=int,
+    default=2**4,
+    help="Number of MCMC walkers. Should at least be 6 for this MCMC algorithm.",
   )
   parser.add_argument(
     "--nsamples", type=int, default=2**14, help="MCMC walker chain length"
   )
-  parser.add_argument("--nburn", type=int, default=2**12, help="MCMC burn")
   parser.add_argument(
-    "--frac", type=float, default=0.5, help="Fit last fraction of data"
+    "--nburn", type=int, default=2**12, help="MCMC burn length"
+  )
+  parser.add_argument(
+    "--frac",
+    type=float,
+    default=0.5,
+    help="Fit last fraction of data. Default: 0.5",
   )
 
   args = parser.parse_args()
   filename = args.filename
   fraction = args.frac
 
-  # Check. Frac must be in (0.0, 1.0)
-  if fraction <= 0.0 or fraction >= 1.0:
-    raise ValueError("frac must be in open interval (0.0, 1.0)")
+  # load explosion energy data
+  # NOTE: Change this for other simulation data.
+  # NOTE: Should be in ergs
+  time, expl_energy = load_expl_energy_flash(filename)
+
+  # --- Do some input checking ---
+
+  if args.nwalkers < 6:
+    args.nwalkers = 6
+    warnings.warn(
+      "\nWarning: nwalkers is less than 6. This will cause issues in the MCMC stepping algorithm. Setting nwalkers to 6.\n"
+    )
+
+  # make sure nburn is less than nwalkers
+  if args.nburn >= args.nsamples:
+    raise ValueError("nburn is too large compared to nwalkers.")
 
   # print(help(Model))
 
-  model = Model(filename, fraction)
+  # --- Run the MCMC model ---
+
+  model = Model(time, expl_energy, fraction)
   model.fit_energy(
     nwalkers=args.nwalkers, nsamples=args.nsamples, nburn=args.nburn
   )
