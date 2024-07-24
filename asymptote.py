@@ -233,12 +233,12 @@ class Model:
     """
     labels = [r"$E_{\infty}$", r"$A$", r"$\sigma^2$"]
 
-    fig = corner.corner(
+    corner.corner(
       self.flat_samples[:, :4],
       labels=labels,
       quantiles=(0.16, 0.5, 0.84),
       show_titles=True,
-      title_fmt=".3f",
+      title_fmt=".6f",
     )
     plt.savefig("cornerplot.png")
 
