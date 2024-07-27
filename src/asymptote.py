@@ -1,15 +1,15 @@
 """
-Purpose: Estimate asymptotic explosion energies.
+Purpose: Estimate asymptotic explosion energies with MCMC methods.
 Author: Brandon Barker
 Inspiration: Murphy et al 2019 (ADS 2019MNRAS.489..641M)
 """
 
-#      ___           _______.____    ____ .___  ___. .______   .___________.  ______   .___________. _______
-#     /   \         /       |\   \  /   / |   \/   | |   _  \  |           | /  __  \  |           ||   ____|
-#    /  ^  \       |   (----` \   \/   /  |  \  /  | |  |_)  | `---|  |----`|  |  |  | `---|  |----`|  |__
-#   /  /_\  \       \   \      \_    _/   |  |\/|  | |   ___/      |  |     |  |  |  |     |  |     |   __|
-#  /  _____  \  .----)   |       |  |     |  |  |  | |  |          |  |     |  `--'  |     |  |     |  |____
-# /__/     \__\ |_______/        |__|     |__|  |__| | _|          |__|      \______/      |__|     |_______|
+#            _______     ____  __ _____ _______ ____ _______ ______
+#     /\    / ____\ \   / /  \/  |  __ \__   __/ __ \__   __|  ____|
+#    /  \  | (___  \ \_/ /| \  / | |__) | | | | |  | | | |  | |__
+#   / /\ \  \___ \  \   / | |\/| |  ___/  | | | |  | | | |  |  __|
+#  / ____ \ ____) |  | |  | |  | | |      | | | |__| | | |  | |____
+# /_/    \_\_____/   |_|  |_|  |_|_|      |_|  \____/  |_|  |______|
 
 import argparse
 import numpy as np
@@ -135,6 +135,7 @@ class Model:
     if self.E_error[0] == 0.0:
       raise ValueError("Energy uncertainty is 0.0. Have you ran the MCMC?")
 
+    # TODO: Since we have the posteriors, this step is bad
     # log(E) should be Normally distributed with symmetric uncertainties.
     # average them and treat them as a Normal variance.
     e_error = np.mean(self.E_error)
@@ -207,10 +208,10 @@ class Model:
     sigma = np.e
     pos[:, 0] = np.random.normal(mu, sigma, nwalkers)
 
-    # sample A, sigma uniform in open interval (0.0, e)
+    # sample A, sigma uniform in open intervals (0.0, e) and (0.0, 0.1)
     eps = np.finfo(float).eps
     pos[:, 1] = np.random.uniform(eps, np.e, nwalkers)
-    pos[:, 2] = np.random.uniform(eps, np.e, nwalkers)
+    pos[:, 2] = np.random.uniform(eps, 0.1, nwalkers)
 
     sampler = emcee.EnsembleSampler(
       nwalkers, ndim, self.log_probability_, args=(x, y)
@@ -282,11 +283,13 @@ class Model:
 def main():
   # Instantiate the parser
   parser = argparse.ArgumentParser(
-    prog="asymptote", description="Asymptotic explosion energy estimator"
+    prog="asymptote",
+    description="Asymptotic explosion energy estimator with MCMC methods",
   )
 
   # Required positional argument
   parser.add_argument("filename", type=str, help="Filename of data file")
+
   # Optional argument
   parser.add_argument(
     "--nwalkers",
