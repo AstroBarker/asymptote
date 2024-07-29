@@ -134,14 +134,13 @@ class Model:
     """
     if self.E_error[0] == 0.0:
       raise ValueError("Energy uncertainty is 0.0. Have you ran the MCMC?")
+    if self.flat_samples is None:
+      raise ValueError("MCMC posteriors are empty. Have you ran the MCMC?")
 
-    # TODO: Since we have the posteriors, this step is bad
-    # log(E) should be Normally distributed with symmetric uncertainties.
-    # average them and treat them as a Normal variance.
-    e_error = np.mean(self.E_error)
+    # can probably just energies = flat_samples[:,0]... oh well.
+    n_mc_samples = 3 * len(self.flat_samples[:, 0])
+    energies = np.random.choice(self.flat_samples[:, 0], n_mc_samples)
 
-    n_mc_samples = 10000
-    energies = np.random.normal(self.E_asym, e_error, n_mc_samples)
     vals = np.power(10.0, energies)  # log(E) -> E
     error = np.percentile(vals, [16, 50, 84])
     mean = error[1]
@@ -324,12 +323,13 @@ def main():
   if args.nwalkers < 6:
     args.nwalkers = 6
     warnings.warn(
-      "\nWarning: nwalkers is less than 6. This will cause issues in the MCMC stepping algorithm. Setting nwalkers to 6.\n"
+      "\nWarning: nwalkers is less than 6. "
+      + "This will cause issues in the MCMC stepping algorithm. Setting nwalkers to 6.\n"
     )
 
   # make sure nburn is less than nwalkers
   if args.nburn >= args.nsamples:
-    raise ValueError("nburn is too large compared to nwalkers.")
+    raise ValueError("nburn is too large compared to nsamples.")
 
   # print(help(Model))
 
@@ -343,16 +343,16 @@ def main():
   model.plot_energy()
 
   print("=========================================================")
-  print(f"Asymptotic explosion energy: log(E) = {model.E_asym:.4f}")
-  print(f"Uncertainties: +{model.E_error[0]:.4e}, -{model.E_error[1]:.4e}")
+  print(f"Asymptotic explosion energy: log(E) = {model.E_asym:.5f}")
+  print(f"Uncertainties: +{model.E_error[0]:.5e}, -{model.E_error[1]:.5e}")
   print("=========================================================\n")
 
   # propagate error log(E) -> E
   mean_e, plus, minus = model.propagate_error()
 
   print("=========================================================")
-  print(f"Asymptotic explosion energy: E = {mean_e:.4e} erg")
-  print(f"Uncertainties: +{plus:.4e} erg, -{minus:.4e} erg")
+  print(f"Asymptotic explosion energy: E = {mean_e:.5e} erg")
+  print(f"Uncertainties: +{plus:.5e} erg, -{minus:.5e} erg")
   print("=========================================================")
 
 
