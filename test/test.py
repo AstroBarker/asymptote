@@ -2,7 +2,7 @@
 
 import sys
 
-sys.path.append("src/")
+sys.path.append("src/asymptote/")
 
 import numpy as np
 import matplotlib.pyplot as plt
